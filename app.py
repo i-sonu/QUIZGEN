@@ -211,17 +211,27 @@ def submit_quiz():
     answers = []
     score = 0
     
+    print("\n=== Quiz Submission Debug ===")
+    print(f"Total questions: {len(quiz_data)}")
+    
     # Get user answers
     for i in range(len(quiz_data)):
         answer = request.form.get(f'q{i}')
         answers.append(answer if answer else '')  # Handle unanswered questions
         
+        print(f"\nQuestion {i+1}:")
+        print(f"User's answer: '{answer}'")
+        print(f"Correct answer: '{quiz_data[i]['answer']}'")
+        print(f"Options: {quiz_data[i]['options']}")
+        
         # Check if the selected option matches the correct answer
         if answer and answer == quiz_data[i]['answer']:
             score += 1
-            print(f"Question {i+1}: Correct! Selected: {answer}, Expected: {quiz_data[i]['answer']}")
+            print("✓ Correct!")
         else:
-            print(f"Question {i+1}: Wrong! Selected: {answer}, Expected: {quiz_data[i]['answer']}")
+            print("✗ Wrong!")
+    
+    print(f"\nFinal Score: {score}/{len(quiz_data)}")
     
     # Calculate percentage
     percentage = (score / len(quiz_data)) * 100

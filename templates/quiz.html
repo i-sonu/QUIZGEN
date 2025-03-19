@@ -621,12 +621,19 @@
             // Add selected class to clicked option
             optionElement.classList.add('selected');
             
-            // Check the hidden radio button
+            // Check the hidden radio button and ensure it's properly set
             const radio = optionElement.querySelector('input[type="radio"]');
             radio.checked = true;
             
+            // Force the radio button to update its value
+            const event = new Event('change', { bubbles: true });
+            radio.dispatchEvent(event);
+            
             // Update progress
             updateProgress();
+            
+            // Debug log
+            console.log(`Question ${questionIndex + 1}: Selected option = ${radio.value}`);
         }
 
         function nextQuestion() {
