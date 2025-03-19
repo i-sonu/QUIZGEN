@@ -2,11 +2,13 @@ from groq import Groq
 from fpdf import FPDF
 import json
 import os
-from flask import Flask, render_template, request, send_file, flash, session, redirect, url_for
+from flask import Flask, render_template, request, send_file, flash, session, redirect, url_for, jsonify
 import tempfile
 import PyPDF2
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
+from threading import Thread
+import time
 
 # Load environment variables
 load_dotenv()
@@ -115,6 +117,30 @@ class QuizGenerator:
 # Initialize QuizGenerator with API key from environment variable
 generator = QuizGenerator(os.environ.get('GROQ_API_KEY'))
 
+class QuizStatus:
+    def __init__(self):
+        self.status = "pending"
+        self.quiz_data = None
+        self.error = None
+
+quiz_status = QuizStatus()
+
+def generate_quiz_async(study_material, num_questions, filepath):
+    """Generate quiz in background"""
+    try:
+        quiz = generator.generate_quiz(study_material, num_questions)
+        if quiz:
+            quiz_status.quiz_data = quiz
+            quiz_status.status = "completed"
+        else:
+            quiz_status.status = "error"
+            quiz_status.error = "Failed to generate quiz"
+            os.remove(filepath)
+    except Exception as e:
+        quiz_status.status = "error"
+        quiz_status.error = str(e)
+        os.remove(filepath)
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
@@ -144,21 +170,31 @@ def index():
             flash('Failed to extract text from PDF. Please try again.', 'error')
             return render_template('index.html')
         
-        # Generate quiz
-        quiz = generator.generate_quiz(study_material, num_questions)
+        # Reset quiz status
+        quiz_status.status = "pending"
+        quiz_status.quiz_data = None
+        quiz_status.error = None
         
-        if quiz:
-            # Store quiz data in session
-            session['quiz_data'] = quiz
-            session['pdf_path'] = filepath
-            flash(f'Successfully uploaded {filename}! Generating quiz...', 'success')
-            return redirect(url_for('take_quiz'))
-        else:
-            flash('Failed to generate quiz. Please try again.', 'error')
-            # Clean up the uploaded file
-            os.remove(filepath)
+        # Start quiz generation in background
+        thread = Thread(target=generate_quiz_async, args=(study_material, num_questions, filepath))
+        thread.daemon = True
+        thread.start()
+        
+        # Store filepath in session for later use
+        session['pdf_path'] = filepath
+        flash(f'Successfully uploaded {filename}! Generating quiz...', 'success')
+        return render_template('index.html', generating=True)
     
     return render_template('index.html')
+
+@app.route('/check_quiz_status')
+def check_quiz_status():
+    if quiz_status.status == "completed":
+        session['quiz_data'] = quiz_status.quiz_data
+        return jsonify({"status": "completed"})
+    elif quiz_status.status == "error":
+        return jsonify({"status": "error", "message": quiz_status.error})
+    return jsonify({"status": "pending"})
 
 @app.route('/quiz', methods=['GET'])
 def take_quiz():
