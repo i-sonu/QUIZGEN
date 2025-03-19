@@ -614,17 +614,19 @@
         }
 
         function selectOption(optionElement, questionIndex) {
-            const options = optionElement.parentElement.querySelectorAll('.option');
-            options.forEach(opt => opt.classList.remove('selected'));
+            // Remove selected class from all options in this question
+            const question = optionElement.closest('.question');
+            question.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
+            
+            // Add selected class to clicked option
             optionElement.classList.add('selected');
             
-            // Make sure the radio button is properly checked
-            const radioInput = optionElement.querySelector('input[type="radio"]');
-            radioInput.checked = true;
+            // Check the hidden radio button
+            const radio = optionElement.querySelector('input[type="radio"]');
+            radio.checked = true;
             
-            // Trigger a change event to ensure form state is updated
-            const event = new Event('change', { bubbles: true });
-            radioInput.dispatchEvent(event);
+            // Update progress
+            updateProgress();
         }
 
         function nextQuestion() {
