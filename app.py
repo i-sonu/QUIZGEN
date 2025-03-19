@@ -14,7 +14,7 @@ import time
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')
+app.secret_key = os.environ.get('SECRET_KEY', 'Ak@23032007')
 
 # Configure upload folder with absolute path
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
