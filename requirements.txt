@@ -1,9 +1,7 @@
 Flask==2.3.3
-groq==0.4.2
+groq==0.3.2
 fpdf==1.7.2
 PyPDF2==3.0.1
 gunicorn==21.2.0
-pytesseract==0.3.10
-Pillow==9.5.0
 python-dotenv==1.0.0
 Werkzeug==3.0.1 

@@ -42,23 +42,31 @@ class QuizGenerator:
     def __init__(self, groq_api_key):
         # Set API key via environment variable
         os.environ["GROQ_API_KEY"] = groq_api_key
-        self.client = Groq()
+        try:
+            self.client = Groq(api_key=groq_api_key)
+        except Exception as e:
+            print(f"Error initializing Groq client: {str(e)}")
+            self.client = None
 
     def _get_llm_response(self, prompt):
         """Get structured response from LLM"""
-        completion = self.client.chat.completions.create(
-            model="llama3-70b-8192",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant that returns only JSON data. Generate quiz questions based on the provided study material."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.7,
-            max_tokens=1024
-        )
+        if not self.client:
+            print("Groq client not initialized")
+            return None
+            
         try:
+            completion = self.client.chat.completions.create(
+                model="llama3-70b-8192",
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant that returns only JSON data. Generate quiz questions based on the provided study material."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7,
+                max_tokens=1024
+            )
             return json.loads(completion.choices[0].message.content)
-        except json.JSONDecodeError:
-            print("Error: Failed to parse LLM response.")
+        except Exception as e:
+            print(f"Error getting LLM response: {str(e)}")
             return None
 
     def generate_quiz(self, study_material, num_questions):
