@@ -612,6 +612,7 @@
                 submitBtn.style.display = 'none';
             }
         }
+
         function selectOption(optionElement, questionIndex) {
             // Remove selected class from all options in this question
             const question = optionElement.closest('.question');
@@ -624,10 +625,19 @@
             const radio = optionElement.querySelector('input[type="radio"]');
             radio.checked = true;
             
+            // Force the radio button to update its value
+            radio.dispatchEvent(new Event('change', { bubbles: true }));
+            
             // Debug log
             console.log(`Question ${questionIndex + 1}: Selected option = ${radio.value}`);
         }
-        
+
+        function nextQuestion() {
+            if (currentQuestion < totalQuestions - 1) {
+                currentQuestion++;
+                showQuestion(currentQuestion);
+            }
+        }
 
         function prevQuestion() {
             if (currentQuestion > 0) {
