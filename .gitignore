@@ -1,0 +1,23 @@
+# Environment variables
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+
+# Uploads folder
+uploads/
+
+# Temporary files
+*.pdf
+temp/
+tmp/
+
+# IDE specific files
+.vscode/
+.idea/
+*.swp
+*.swo 

@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Take the Quiz</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1e0b2c 0%, #341356 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        /* Decorative elements */
+        body::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(47, 184, 255, 0.1) 0%, transparent 70%);
+            z-index: 0;
+        }
+
+        body::after {
+            content: '';
+            position: absolute;
+            bottom: -50%;
+            left: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(157, 78, 221, 0.1) 0%, transparent 70%);
+            z-index: 0;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 100%;
+            max-width: 800px;
+            position: relative;
+            z-index: 1;
+            opacity: 0;
+            transform: scale(0.9);
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        .questions-container {
+            position: relative;
+            margin-bottom: 30px;
+            overflow: hidden;
+            min-height: 200px;
+        }
+
+        h1, h2, h3 {
+            color: #fff;
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(47, 184, 255, 0.3);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 40px;
+        }
+
+        h2 {
+            font-size: 2em;
+            color: #2fb8ff;
+        }
+
+        h3 {
+            font-size: 1.5em;
+            text-align: left;
+            margin-bottom: 15px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            background: linear-gradient(45deg, #2fb8ff, #9d4edd);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(47, 184, 255, 0.3);
+        }
+
+        .question {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: none;
+            width: 100%;
+            opacity: 0;
+            transform: translateX(100px);
+            transition: all 0.5s ease;
+        }
+
+        .question.active {
+            display: block;
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .question.slide-left {
+            display: block;
+            opacity: 0;
+            transform: translateX(-100px);
+        }
+
+        .question.slide-right {
+            display: block;
+            opacity: 0;
+            transform: translateX(100px);
+        }
+
+        .question p {
+            color: #fff;
+            font-size: 1.1em;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .options {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .option {
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.5s ease;
+            opacity: 0;
+            transform: translateX(100px);
+        }
+
+        .question.active .option {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .question.active .option:nth-child(1) { transition-delay: 0.2s; }
+        .question.active .option:nth-child(2) { transition-delay: 0.3s; }
+        .question.active .option:nth-child(3) { transition-delay: 0.4s; }
+        .question.active .option:nth-child(4) { transition-delay: 0.5s; }
+
+        .question.slide-left .option {
+            opacity: 0;
+            transform: translateX(-100px);
+        }
+
+        .question.slide-left .option:nth-child(1) { transition-delay: 0s; }
+        .question.slide-left .option:nth-child(2) { transition-delay: 0.1s; }
+        .question.slide-left .option:nth-child(3) { transition-delay: 0.2s; }
+        .question.slide-left .option:nth-child(4) { transition-delay: 0.3s; }
+
+        .question.slide-right .option {
+            opacity: 0;
+            transform: translateX(100px);
+            transition: all 0.5s ease;
+        }
+
+        .question.slide-right .option:nth-child(1) { transition-delay: 0s; }
+        .question.slide-right .option:nth-child(2) { transition-delay: 0.1s; }
+        .question.slide-right .option:nth-child(3) { transition-delay: 0.2s; }
+        .question.slide-right .option:nth-child(4) { transition-delay: 0.3s; }
+
+        .option:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(47, 184, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .option.selected {
+            background: rgba(47, 184, 255, 0.2);
+            border-color: #2fb8ff;
+        }
+
+        .option.correct {
+            background: rgba(76, 175, 80, 0.2);
+            border-color: #4CAF50;
+        }
+
+        .option.incorrect {
+            background: rgba(244, 67, 54, 0.2);
+            border-color: #f44336;
+        }
+
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            margin-top: 30px;
+            position: relative;
+            z-index: 2;
+            clear: both;
+        }
+
+        button {
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #2fb8ff, #9d4edd);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 1.1em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(47, 184, 255, 0.2);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(47, 184, 255, 0.4);
+        }
+
+        button:disabled {
+            background: rgba(255, 255, 255, 0.1);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .nav-btn {
+            flex: 1;
+            position: relative;
+        }
+
+        .nav-btn:after {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            border-radius: 12px;
+            background: linear-gradient(45deg, #2fb8ff, #9d4edd);
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .nav-btn:hover:after {
+            opacity: 0.4;
+        }
+
+        #submitBtn {
+            width: 100%;
+            margin-top: 20px;
+            background: linear-gradient(45deg, #2fb8ff, #9d4edd);
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 0 20px rgba(47, 184, 255, 0.3);
+        }
+
+        #submitBtn:hover {
+            box-shadow: 0 0 30px rgba(47, 184, 255, 0.5);
+        }
+
+        #submitBtn:after {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            border-radius: 12px;
+            background: linear-gradient(45deg, #2fb8ff, #9d4edd);
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #submitBtn:hover:after {
+            opacity: 0.4;
+        }
+
+        .result-container {
+            text-align: center;
+        }
+
+        .score {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #2fb8ff;
+            margin: 30px 0;
+            text-shadow: 0 0 20px rgba(47, 184, 255, 0.5);
+        }
+
+        .feedback {
+            margin-top: 15px;
+            font-style: italic;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .download-btn {
+            background: linear-gradient(45deg, #2fb8ff, #2196f3);
+            margin-top: 30px;
+        }
+
+        .review-button {
+            background: linear-gradient(45deg, #2fb8ff, #9d4edd);
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 1.1em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 20px 0;
+            width: 100%;
+            box-shadow: 0 0 15px rgba(47, 184, 255, 0.2);
+        }
+
+        .review-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(47, 184, 255, 0.4);
+        }
+
+        .review-section {
+            will-change: max-height, opacity, transform;
+            max-height: 0;
+            overflow: hidden;
+            margin-top: 0;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: max-height 0.4s ease-out, opacity 0.3s ease-out, transform 0.3s ease-out, margin-top 0.3s ease-out;
+            padding: 0 20px;
+        }
+
+        .review-section.show {
+            max-height: 5000px;
+            margin-top: 30px;
+            opacity: 1;
+            transform: translateY(0);
+            padding: 20px;
+        }
+
+        .review-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .review-question {
+            color: #fff;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+        }
+
+        .review-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+
+        .review-option .mark {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .review-option .correct-mark {
+            color: #4CAF50;
+        }
+
+        .review-option .wrong-mark {
+            color: #f44336;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            button {
+                font-size: 1em;
+                padding: 12px 20px;
+            }
+
+            .navigation-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% if not show_results %}
+        <h1>QUIZ</h1>
+        {% else %}
+        <h1>QUIZ RESULTS</h1>
+        {% endif %}
+        
+        {% if not show_results %}
+        <div class="progress-bar">
+            <div class="progress" id="progress"></div>
+        </div>
+
+        <form id="quizForm" method="POST" action="{{ url_for('submit_quiz') }}">
+            <input type="hidden" name="quiz_data" value="{{ quiz_data|tojson }}">
+            
+            <div class="questions-container">
+                {% for question in quiz_data %}
+                <div class="question" id="question-{{ loop.index0 }}">
+                    <h3>Question {{ loop.index }}</h3>
+                    <p>{{ question.question }}</p>
+                    <div class="options">
+                        {% for option in question.options %}
+                        <div class="option" onclick="selectOption(this, {{ loop.index0 }})">
+                            <input type="radio" name="q{{ loop.index0 }}" value="{{ option }}" style="display: none;">
+                            {{ option }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="navigation-buttons">
+                <button type="button" class="nav-btn" id="prevBtn" onclick="prevQuestion()" disabled>Previous</button>
+                <button type="button" class="nav-btn" id="nextBtn" onclick="nextQuestion()">Next</button>
+            </div>
+
+            <button type="submit" id="submitBtn" style="display: none;">Submit Quiz</button>
+        </form>
+        {% else %}
+        <div class="result-container">
+            <div class="score">
+                {{ score }}/{{ total }} ({{ "%.1f"|format(percentage) }}%)
+            </div>
+
+            <button class="review-button" onclick="toggleReview()">Quiz Review</button>
+
+            <div class="review-section" id="reviewSection">
+                {% for question in quiz_data %}
+                <div class="review-item">
+                    <div class="review-question">
+                        <strong>Question {{ loop.index }}:</strong> {{ question.question }}
+                    </div>
+                    {% for option in question.options %}
+                    <div class="review-option">
+                        {{ option }}
+                        {% if option == question.answer %}
+                        <span class="mark correct-mark">✓</span>
+                        {% elif option == answers[loop.index0] and option != question.answer %}
+                        <span class="mark wrong-mark">✗</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+            
+            <button class="download-btn" onclick="window.location.href='{{ url_for('download_quiz') }}'">
+                Download Quiz PDF
+            </button>
+        </div>
+
+        <script>
+            function toggleReview() {
+                const reviewSection = document.getElementById('reviewSection');
+                const isExpanded = reviewSection.classList.contains('show');
+                
+                if (!isExpanded) {
+                    // Calculate content height before expanding
+                    reviewSection.style.display = 'block';
+                    reviewSection.style.visibility = 'hidden';
+                    reviewSection.style.maxHeight = 'none';
+                    const contentHeight = reviewSection.offsetHeight;
+                    reviewSection.style.display = '';
+                    reviewSection.style.visibility = '';
+                    reviewSection.style.maxHeight = '0';
+                    
+                    // Force reflow
+                    reviewSection.offsetHeight;
+                    
+                    // Set actual height instead of max-height
+                    reviewSection.style.maxHeight = contentHeight + 'px';
+                    reviewSection.classList.add('show');
+                } else {
+                    reviewSection.style.maxHeight = '0';
+                    reviewSection.classList.remove('show');
+                }
+                
+                // Scroll into view smoothly if opening
+                if (!isExpanded) {
+                    setTimeout(() => {
+                        reviewSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 300);
+                }
+            }
+        </script>
+        {% endif %}
+    </div>
+
+    {% if not show_results %}
+    <script>
+        let currentQuestion = 0;
+        const totalQuestions = {{ quiz_data|length }};
+        const questions = document.querySelectorAll('.question');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const submitBtn = document.getElementById('submitBtn');
+
+        function updateProgress() {
+            const progress = ((currentQuestion + 1) / totalQuestions) * 100;
+            document.getElementById('progress').style.width = progress + '%';
+        }
+
+        function showQuestion(index) {
+            const currentActive = document.querySelector('.question.active');
+            
+            if (currentActive) {
+                currentActive.classList.add('slide-left');
+                currentActive.classList.remove('active');
+            }
+
+            questions.forEach(q => {
+                if (q !== currentActive) {
+                    q.style.display = 'none';
+                    q.classList.remove('active', 'slide-left', 'slide-right');
+                }
+            });
+
+            const newQuestion = questions[index];
+            newQuestion.style.display = 'block';
+            
+            // Force a reflow
+            newQuestion.offsetHeight;
+            
+            newQuestion.classList.add('slide-right');
+            
+            setTimeout(() => {
+                if (currentActive) {
+                    currentActive.style.display = 'none';
+                }
+                newQuestion.classList.remove('slide-right');
+                newQuestion.classList.add('active');
+            }, 50);
+
+            currentQuestion = index;
+            updateProgress();
+            
+            // Update navigation buttons
+            prevBtn.disabled = index === 0;
+            if (index === totalQuestions - 1) {
+                nextBtn.style.display = 'none';
+                submitBtn.style.display = 'block';
+            } else {
+                nextBtn.style.display = 'block';
+                submitBtn.style.display = 'none';
+            }
+        }
+
+        function selectOption(optionElement, questionIndex) {
+            const options = optionElement.parentElement.querySelectorAll('.option');
+            options.forEach(opt => opt.classList.remove('selected'));
+            optionElement.classList.add('selected');
+            
+            // Make sure the radio button is properly checked
+            const radioInput = optionElement.querySelector('input[type="radio"]');
+            radioInput.checked = true;
+            
+            // Trigger a change event to ensure form state is updated
+            const event = new Event('change', { bubbles: true });
+            radioInput.dispatchEvent(event);
+        }
+
+        function nextQuestion() {
+            if (currentQuestion < totalQuestions - 1) {
+                currentQuestion++;
+                showQuestion(currentQuestion);
+            }
+        }
+
+        function prevQuestion() {
+            if (currentQuestion > 0) {
+                currentQuestion--;
+                showQuestion(currentQuestion);
+            }
+        }
+
+        // Initialize the quiz
+        showQuestion(0);
+    </script>
+    {% endif %}
+</body>
+</html> 
