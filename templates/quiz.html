@@ -612,7 +612,6 @@
                 submitBtn.style.display = 'none';
             }
         }
-
         function selectOption(optionElement, questionIndex) {
             // Remove selected class from all options in this question
             const question = optionElement.closest('.question');
@@ -621,23 +620,19 @@
             // Add selected class to clicked option
             optionElement.classList.add('selected');
             
-            // Check the hidden radio button
+            // Check the hidden radio button by clicking it manually
             const radio = optionElement.querySelector('input[type="radio"]');
+            
+            // Ensure the radio button is clicked
             radio.checked = true;
-            
-            // Force the radio button to update its value
-            radio.dispatchEvent(new Event('change', { bubbles: true }));
-            
-            // Debug log
+        
+            // Debug log to confirm the selection
             console.log(`Question ${questionIndex + 1}: Selected option = ${radio.value}`);
+            
+            // Dispatch change event to notify any listeners
+            radio.dispatchEvent(new Event('change', { bubbles: true }));
         }
-
-        function nextQuestion() {
-            if (currentQuestion < totalQuestions - 1) {
-                currentQuestion++;
-                showQuestion(currentQuestion);
-            }
-        }
+        
 
         function prevQuestion() {
             if (currentQuestion > 0) {
