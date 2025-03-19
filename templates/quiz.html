@@ -468,7 +468,7 @@
                     <div class="options">
                         {% for option in question.options %}
                         <div class="option" onclick="selectOption(this, {{ loop.index0 }})">
-                            <input type="radio" name="q{{ loop.index0 }}" value="{{ option }}" style="display: none;" required>
+                            <input type="radio" name="q{{ loop.index0 }}" value="{{ option }}" style="display: none;">
                             {{ option }}
                         </div>
                         {% endfor %}
@@ -625,11 +625,8 @@
             const radio = optionElement.querySelector('input[type="radio"]');
             radio.checked = true;
             
-            // Log the selected value for debugging
-            console.log(`Question ${questionIndex + 1}: Selected = ${radio.value}`);
-            
-            // Update progress
-            updateProgress();
+            // Debug log
+            console.log(`Question ${questionIndex + 1}: Selected option = ${radio.value}`);
         }
 
         function nextQuestion() {
@@ -649,26 +646,18 @@
         // Initialize the quiz
         showQuestion(0);
 
-        // Add form submission validation
+        // Add form submission handler
         document.getElementById('quizForm').addEventListener('submit', function(e) {
-            const totalQuestions = {{ quiz_data|length }};
-            let answered = 0;
+            e.preventDefault();
             
-            for (let i = 0; i < totalQuestions; i++) {
-                const radio = document.querySelector(`input[name="q${i}"]:checked`);
-                if (radio) {
-                    answered++;
-                    console.log(`Question ${i + 1} answered: ${radio.value}`);
-                }
+            // Log all selected answers before submission
+            const formData = new FormData(this);
+            for (let [key, value] of formData.entries()) {
+                console.log(`${key}: ${value}`);
             }
             
-            if (answered < totalQuestions) {
-                e.preventDefault();
-                alert('Please answer all questions before submitting!');
-                return false;
-            }
-            
-            return true;
+            // Submit the form
+            this.submit();
         });
     </script>
     {% endif %}
