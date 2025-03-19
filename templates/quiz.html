@@ -620,17 +620,25 @@
             // Add selected class to clicked option
             optionElement.classList.add('selected');
             
-            // Check the hidden radio button by clicking it manually
+            // Check the hidden radio button
             const radio = optionElement.querySelector('input[type="radio"]');
-            
-            // Ensure the radio button is clicked
-            radio.checked = true;
+            radio.checked = true; // Mark the radio as checked
         
-            // Debug log to confirm the selection
+            // Log the selected value (for debugging)
             console.log(`Question ${questionIndex + 1}: Selected option = ${radio.value}`);
             
-            // Dispatch change event to notify any listeners
-            radio.dispatchEvent(new Event('change', { bubbles: true }));
+            // Check if the selected answer matches the correct answer
+            const correctAnswer = {{ question.answer|tojson }}; // Assuming `question.answer` contains the correct answer
+            
+            if (radio.value === correctAnswer) {
+                // Optionally, you can mark this as the correct answer visually.
+                optionElement.classList.add('correct');
+                console.log(`Question ${questionIndex + 1}: Correct answer selected.`);
+            } else {
+                // If selected answer is incorrect, visually mark it
+                optionElement.classList.add('incorrect');
+                console.log(`Question ${questionIndex + 1}: Incorrect answer selected.`);
+            }
         }
         
 
