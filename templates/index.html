@@ -236,60 +236,90 @@
         <div class="flash-message" id="flashMessage"></div>
         <div class="selected-file" id="selectedFile"></div>
 
-        <form method="POST" enctype="multipart/form-data" id="uploadForm">
-            <div class="form-group">
-                <label>UPLOAD STUDY MATERIAL</label>
-                <div class="file-input-wrapper">
-                    <input type="file" id="file" name="file" accept=".pdf" required>
-                    <label for="file" class="file-input-label">Choose PDF file</label>
+        <form method="POST" enctype="multipart/form-data" id="uploadForm" class="space-y-6">
+            <div class="space-y-2">
+                <label for="file" class="block text-sm font-medium text-gray-200">Choose PDF File</label>
+                <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-700 border-dashed rounded-lg">
+                    <div class="space-y-1 text-center">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <div class="flex text-sm text-gray-400">
+                            <label for="file" class="relative cursor-pointer rounded-md font-medium text-indigo-400 hover:text-indigo-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-900">
+                                <span>Upload a file</span>
+                                <input id="file" name="file" type="file" class="sr-only" accept=".pdf" required>
+                            </label>
+                            <p class="pl-1">or drag and drop</p>
+                        </div>
+                        <p class="text-xs text-gray-500">PDF up to 16MB</p>
+                    </div>
                 </div>
+                <div id="file-name" class="text-sm text-gray-400 mt-2"></div>
             </div>
-            
-            <div class="form-group">
-                <label>NUMBER OF QUESTIONS</label>
-                <input type="number" id="num_questions" name="num_questions" value="5" min="1" max="20">
+
+            <div class="space-y-2">
+                <label for="num_questions" class="block text-sm font-medium text-gray-200">Number of Questions</label>
+                <input type="number" id="num_questions" name="num_questions" min="1" max="20" value="5" required
+                    class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
             </div>
-            
-            <button type="submit" id="submitBtn">SUBMIT</button>
+
+            <button type="submit" id="submit-btn"
+                class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                <span>Generate Quiz</span>
+                <div id="loading-spinner" class="hidden ml-2">
+                    <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>
+            </button>
         </form>
     </div>
 
     <script>
-        const fileInput = document.getElementById('file');
-        const selectedFile = document.getElementById('selectedFile');
-        const uploadForm = document.getElementById('uploadForm');
-        const submitBtn = document.getElementById('submitBtn');
-        const flashMessage = document.getElementById('flashMessage');
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('uploadForm');
+            const fileInput = document.getElementById('file');
+            const fileNameDisplay = document.getElementById('file-name');
+            const submitBtn = document.getElementById('submit-btn');
+            const loadingSpinner = document.getElementById('loading-spinner');
 
-        fileInput.addEventListener('change', function(e) {
-            const fileName = e.target.files[0]?.name;
-            if (fileName) {
-                const fileLabel = document.querySelector('.file-input-label');
-                fileLabel.innerHTML = `Selected: ${fileName}`;
-                fileLabel.style.background = 'rgba(47, 184, 255, 0.1)';
-                fileLabel.style.borderColor = 'rgba(47, 184, 255, 0.5)';
-            }
-        });
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    fileNameDisplay.textContent = `Selected file: ${file.name}`;
+                    fileNameDisplay.classList.remove('hidden');
+                } else {
+                    fileNameDisplay.textContent = '';
+                    fileNameDisplay.classList.add('hidden');
+                }
+            });
 
-        uploadForm.addEventListener('submit', function(e) {
-            if (fileInput.files.length > 0) {
-                submitBtn.innerHTML = 'GENERATING QUIZ...';
-                submitBtn.style.opacity = '0.7';
+            form.addEventListener('submit', function(e) {
+                const file = fileInput.files[0];
+                if (!file) {
+                    e.preventDefault();
+                    alert('Please select a PDF file');
+                    return;
+                }
+
+                if (file.type !== 'application/pdf') {
+                    e.preventDefault();
+                    alert('Please select a PDF file');
+                    return;
+                }
+
+                if (file.size > 16 * 1024 * 1024) { // 16MB
+                    e.preventDefault();
+                    alert('File size must be less than 16MB');
+                    return;
+                }
+
+                // Show loading state
                 submitBtn.disabled = true;
-                
-                // Add zoom out animation after a short delay
-                setTimeout(() => {
-                    document.querySelector('.container').classList.add('zoom-out');
-                }, 1000);
-            }
+                loadingSpinner.classList.remove('hidden');
+            });
         });
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
     </script>
 </body>
 </html> 

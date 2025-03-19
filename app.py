@@ -18,9 +18,11 @@ app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
 ALLOWED_EXTENSIONS = {'pdf'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 # Create uploads directory if it doesn't exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+print(f"Upload folder created at: {UPLOAD_FOLDER}")
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -118,45 +120,67 @@ generator = QuizGenerator(os.environ.get('GROQ_API_KEY'))
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        if 'file' not in request.files:
-            flash('No file uploaded', 'error')
+        try:
+            if 'file' not in request.files:
+                print("No file in request.files")
+                flash('No file uploaded', 'error')
+                return render_template('index.html')
+            
+            file = request.files['file']
+            if file.filename == '':
+                print("No file selected")
+                flash('No file selected', 'error')
+                return render_template('index.html')
+            
+            if not allowed_file(file.filename):
+                print(f"Invalid file type: {file.filename}")
+                flash('Invalid file type. Please upload a PDF file.', 'error')
+                return render_template('index.html')
+            
+            num_questions = int(request.form.get('num_questions', 5))
+            
+            # Save the uploaded file
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            print(f"Saving file to: {filepath}")
+            
+            # Ensure the upload directory exists
+            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+            
+            # Save the file
+            file.save(filepath)
+            print(f"File saved successfully")
+            
+            # Extract text from PDF
+            study_material = extract_text_from_pdf(filepath)
+            if not study_material:
+                print("Failed to extract text from PDF")
+                flash('Failed to extract text from PDF. Please try again.', 'error')
+                if os.path.exists(filepath):
+                    os.remove(filepath)
+                return render_template('index.html')
+            
+            print("Generating quiz...")
+            # Generate quiz
+            quiz = generator.generate_quiz(study_material, num_questions)
+            
+            if quiz:
+                # Store quiz data in session
+                session['quiz_data'] = quiz
+                session['pdf_path'] = filepath
+                flash(f'Successfully uploaded {filename}! Generating quiz...', 'success')
+                return redirect(url_for('take_quiz'))
+            else:
+                print("Failed to generate quiz")
+                flash('Failed to generate quiz. Please try again.', 'error')
+                if os.path.exists(filepath):
+                    os.remove(filepath)
+                return render_template('index.html')
+                
+        except Exception as e:
+            print(f"Error during file upload: {str(e)}")
+            flash(f'An error occurred: {str(e)}', 'error')
             return render_template('index.html')
-        
-        file = request.files['file']
-        if file.filename == '':
-            flash('No file selected', 'error')
-            return render_template('index.html')
-        
-        if not allowed_file(file.filename):
-            flash('Invalid file type. Please upload a PDF file.', 'error')
-            return render_template('index.html')
-        
-        num_questions = int(request.form.get('num_questions', 5))
-        
-        # Save the uploaded file
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
-        
-        # Extract text from PDF
-        study_material = extract_text_from_pdf(filepath)
-        if not study_material:
-            flash('Failed to extract text from PDF. Please try again.', 'error')
-            return render_template('index.html')
-        
-        # Generate quiz
-        quiz = generator.generate_quiz(study_material, num_questions)
-        
-        if quiz:
-            # Store quiz data in session
-            session['quiz_data'] = quiz
-            session['pdf_path'] = filepath
-            flash(f'Successfully uploaded {filename}! Generating quiz...', 'success')
-            return redirect(url_for('take_quiz'))
-        else:
-            flash('Failed to generate quiz. Please try again.', 'error')
-            # Clean up the uploaded file
-            os.remove(filepath)
     
     return render_template('index.html')
 
