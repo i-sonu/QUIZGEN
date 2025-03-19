@@ -467,8 +467,10 @@
                     <p>{{ question.question }}</p>
                     <div class="options">
                         {% for option in question.options %}
-                        <div class="option" onclick="selectOption(this, {{ loop.index0 }})">
-                            <input type="radio" name="q{{ loop.index0 }}" value="{{ option }}" style="display: none;">
+                        <div class="option" onclick="selectOption(this, {{ loop.parent.loop.index0 }})">
+                            <input type="radio" id="q{{ loop.parent.loop.index0 }}_opt{{ loop.index0 }}" 
+                                name="q{{ loop.parent.loop.index0 }}" 
+                                value="{{ option }}" style="display: none;">
                             {{ option }}
                         </div>
                         {% endfor %}
@@ -625,10 +627,9 @@
             const radio = optionElement.querySelector('input[type="radio"]');
             radio.checked = true;
             
-            // Force the radio button to update its value
-            radio.dispatchEvent(new Event('change', { bubbles: true }));
+            // Store the selection in a data attribute on the question div for redundancy
+            question.setAttribute('data-selected', radio.value);
             
-            // Debug log
             console.log(`Question ${questionIndex + 1}: Selected option = ${radio.value}`);
         }
 
@@ -653,16 +654,42 @@
         document.getElementById('quizForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            // Ensure all radio buttons are properly checked
+            // Double-check all selections before submission
             const questions = document.querySelectorAll('.question');
+            let allAnswered = true;
+            
             questions.forEach((question, index) => {
                 const selectedOption = question.querySelector('.option.selected');
                 if (selectedOption) {
                     const radio = selectedOption.querySelector('input[type="radio"]');
                     radio.checked = true;
                     console.log(`Question ${index + 1}: Final selected option = ${radio.value}`);
+                } else {
+                    const storedSelection = question.getAttribute('data-selected');
+                    if (storedSelection) {
+                        // Try to recover from stored data attribute
+                        const matchingOption = Array.from(question.querySelectorAll('.option')).find(
+                            opt => opt.textContent.trim() === storedSelection.trim()
+                        );
+                        if (matchingOption) {
+                            matchingOption.classList.add('selected');
+                            const radio = matchingOption.querySelector('input[type="radio"]');
+                            if (radio) radio.checked = true;
+                            console.log(`Question ${index + 1}: Recovered selection = ${storedSelection}`);
+                        } else {
+                            allAnswered = false;
+                            console.log(`Question ${index + 1}: No selection recovered`);
+                        }
+                    } else {
+                        allAnswered = false;
+                        console.log(`Question ${index + 1}: No selection found`);
+                    }
                 }
             });
+            
+            // Remove the existing quiz_data hidden field to prevent issues
+            const existingQuizData = this.querySelector('input[name="quiz_data"]');
+            if (existingQuizData) existingQuizData.remove();
             
             // Log all form data before submission
             const formData = new FormData(this);
