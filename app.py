@@ -207,50 +207,58 @@ def submit_quiz():
     if 'quiz_data' not in session:
         return redirect(url_for('index'))
     
-    quiz_data = session['quiz_data']
-    answers = []
-    score = 0
-    
-    print("\n=== Quiz Submission Debug ===")
-    print(f"Total questions: {len(quiz_data)}")
-    print(f"Form data received: {request.form}")
-    
-    # Get user answers
-    for i in range(len(quiz_data)):
-        answer = request.form.get(f'q{i}')
-        answers.append(answer if answer else '')  # Handle unanswered questions
+    try:
+        quiz_data = session['quiz_data']
+        answers = []
+        score = 0
         
-        print(f"\nQuestion {i+1}:")
-        print(f"User's answer: '{answer}'")
-        print(f"Correct answer: '{quiz_data[i]['answer']}'")
-        print(f"Options: {quiz_data[i]['options']}")
+        print("\n=== Quiz Submission Debug ===")
+        print(f"Total questions: {len(quiz_data)}")
+        print(f"Form data received: {request.form}")
         
-        # Check if the selected option matches the correct answer
-        if answer and answer.strip() == quiz_data[i]['answer'].strip():
-            score += 1
-            print("✓ Correct!")
-        else:
-            print("✗ Wrong!")
-            print(f"Answer comparison: '{answer}' == '{quiz_data[i]['answer']}'")
-    
-    print(f"\nFinal Score: {score}/{len(quiz_data)}")
-    
-    # Calculate percentage
-    percentage = (score / len(quiz_data)) * 100
-    
-    # Store results in session
-    session['score'] = score
-    session['total'] = len(quiz_data)
-    session['percentage'] = percentage
-    session['answers'] = answers
-    
-    return render_template('quiz.html', 
-                         quiz_data=quiz_data, 
-                         show_results=True, 
-                         score=score, 
-                         total=len(quiz_data), 
-                         percentage=percentage,
-                         answers=answers)  # Pass answers to template
+        # Get user answers
+        for i in range(len(quiz_data)):
+            answer = request.form.get(f'q{i}')
+            if answer is None:
+                answer = ''
+            answers.append(answer)
+            
+            print(f"\nQuestion {i+1}:")
+            print(f"User's answer: '{answer}'")
+            print(f"Correct answer: '{quiz_data[i]['answer']}'")
+            print(f"Options: {quiz_data[i]['options']}")
+            
+            # Check if the selected option matches the correct answer
+            if answer and answer.strip() == quiz_data[i]['answer'].strip():
+                score += 1
+                print("✓ Correct!")
+            else:
+                print("✗ Wrong!")
+                print(f"Answer comparison: '{answer}' == '{quiz_data[i]['answer']}'")
+        
+        print(f"\nFinal Score: {score}/{len(quiz_data)}")
+        
+        # Calculate percentage
+        percentage = (score / len(quiz_data)) * 100
+        
+        # Store results in session
+        session['score'] = score
+        session['total'] = len(quiz_data)
+        session['percentage'] = percentage
+        session['answers'] = answers
+        
+        return render_template('quiz.html', 
+                             quiz_data=quiz_data, 
+                             show_results=True, 
+                             score=score, 
+                             total=len(quiz_data), 
+                             percentage=percentage,
+                             answers=answers)
+    except Exception as e:
+        print(f"Error in submit_quiz: {str(e)}")
+        return render_template('quiz.html', 
+                             quiz_data=quiz_data,
+                             error="An error occurred while processing your quiz submission. Please try again.")
 
 @app.route('/download_quiz')
 def download_quiz():
