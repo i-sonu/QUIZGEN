@@ -231,60 +231,65 @@
 </head>
 <body>
     <div class="container">
-        <h1>STUDY MATERIAL QUIZ GENERATOR</h1>
-        
-        <div class="flash-message" id="flashMessage"></div>
-        <div class="selected-file" id="selectedFile"></div>
-
-        <form method="POST" enctype="multipart/form-data" id="uploadForm">
-            <div class="form-group">
-                <label>UPLOAD STUDY MATERIAL</label>
-                <div class="file-input-wrapper">
+        <h1>PDF to Quiz Generator</h1>
+        <div class="upload-section" id="uploadSection">
+            <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                <div class="form-group">
+                    <label for="file">Upload PDF File</label>
                     <input type="file" id="file" name="file" accept=".pdf" required>
-                    <label for="file" class="file-input-label">Choose PDF file</label>
                 </div>
-            </div>
-            
-            <div class="form-group">
-                <label>NUMBER OF QUESTIONS</label>
-                <input type="number" id="num_questions" name="num_questions" value="5" min="1" max="20">
-            </div>
-            
-            <button type="submit" id="submitBtn">SUBMIT</button>
-        </form>
+                <div class="form-group">
+                    <label for="num_questions">Number of Questions</label>
+                    <input type="number" id="num_questions" name="num_questions" min="1" max="20" value="5" required>
+                </div>
+                <button type="submit" class="btn">Generate Quiz</button>
+            </form>
+        </div>
+
+        <div class="loading-section" id="loadingSection" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p>Generating quiz questions... This may take a few moments.</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
     </div>
 
     <script>
-        const fileInput = document.getElementById('file');
-        const selectedFile = document.getElementById('selectedFile');
-        const uploadForm = document.getElementById('uploadForm');
-        const submitBtn = document.getElementById('submitBtn');
-        const flashMessage = document.getElementById('flashMessage');
-
-        fileInput.addEventListener('change', function(e) {
-            const fileName = e.target.files[0]?.name;
-            if (fileName) {
-                const fileLabel = document.querySelector('.file-input-label');
-                fileLabel.innerHTML = `Selected: ${fileName}`;
-                fileLabel.style.background = 'rgba(47, 184, 255, 0.1)';
-                fileLabel.style.borderColor = 'rgba(47, 184, 255, 0.5)';
-            }
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            // Show loading section and hide upload section
+            document.getElementById('loadingSection').style.display = 'flex';
+            document.getElementById('uploadSection').style.display = 'none';
+            
+            // Submit the form
+            fetch('/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.text())
+            .then(html => {
+                // Start checking quiz status
+                checkQuizStatus();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-error';
+                alert.textContent = 'An error occurred. Please try again.';
+                document.querySelector('.container').appendChild(alert);
+                document.getElementById('loadingSection').style.display = 'none';
+                document.getElementById('uploadSection').style.display = 'block';
+            });
         });
 
-        uploadForm.addEventListener('submit', function(e) {
-            if (fileInput.files.length > 0) {
-                submitBtn.innerHTML = 'GENERATING QUIZ...';
-                submitBtn.style.opacity = '0.7';
-                submitBtn.disabled = true;
-                
-                // Add zoom out animation after a short delay
-                setTimeout(() => {
-                    document.querySelector('.container').classList.add('zoom-out');
-                }, 1000);
-            }
-        });
-
-        {% if generating %}
         function checkQuizStatus() {
             fetch('/check_quiz_status')
                 .then(response => response.json())
@@ -297,6 +302,7 @@
                         alert.textContent = data.message || 'Failed to generate quiz. Please try again.';
                         document.querySelector('.container').appendChild(alert);
                         document.getElementById('loadingSection').style.display = 'none';
+                        document.getElementById('uploadSection').style.display = 'block';
                     } else {
                         setTimeout(checkQuizStatus, 2000); // Check again after 2 seconds
                     }
@@ -306,10 +312,6 @@
                     setTimeout(checkQuizStatus, 2000);
                 });
         }
-
-        // Start checking status when page loads
-        document.addEventListener('DOMContentLoaded', checkQuizStatus);
-        {% endif %}
     </script>
 </body>
 </html> 
