@@ -468,7 +468,7 @@
                     <div class="options">
                         {% for option in question.options %}
                         <div class="option" onclick="selectOption(this, {{ loop.index0 }})">
-                            <input type="radio" name="q{{ loop.index0 }}" value="{{ option }}" style="display: none;">
+                            <input type="radio" name="q{{ loop.index0 }}" value="{{ option }}" style="display: none;" required>
                             {{ option }}
                         </div>
                         {% endfor %}
@@ -621,19 +621,15 @@
             // Add selected class to clicked option
             optionElement.classList.add('selected');
             
-            // Check the hidden radio button and ensure it's properly set
+            // Check the hidden radio button
             const radio = optionElement.querySelector('input[type="radio"]');
             radio.checked = true;
             
-            // Force the radio button to update its value
-            const event = new Event('change', { bubbles: true });
-            radio.dispatchEvent(event);
+            // Log the selected value for debugging
+            console.log(`Question ${questionIndex + 1}: Selected = ${radio.value}`);
             
             // Update progress
             updateProgress();
-            
-            // Debug log
-            console.log(`Question ${questionIndex + 1}: Selected option = ${radio.value}`);
         }
 
         function nextQuestion() {
@@ -652,6 +648,28 @@
 
         // Initialize the quiz
         showQuestion(0);
+
+        // Add form submission validation
+        document.getElementById('quizForm').addEventListener('submit', function(e) {
+            const totalQuestions = {{ quiz_data|length }};
+            let answered = 0;
+            
+            for (let i = 0; i < totalQuestions; i++) {
+                const radio = document.querySelector(`input[name="q${i}"]:checked`);
+                if (radio) {
+                    answered++;
+                    console.log(`Question ${i + 1} answered: ${radio.value}`);
+                }
+            }
+            
+            if (answered < totalQuestions) {
+                e.preventDefault();
+                alert('Please answer all questions before submitting!');
+                return false;
+            }
+            
+            return true;
+        });
     </script>
     {% endif %}
 </body>

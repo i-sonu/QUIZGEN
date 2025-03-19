@@ -213,6 +213,7 @@ def submit_quiz():
     
     print("\n=== Quiz Submission Debug ===")
     print(f"Total questions: {len(quiz_data)}")
+    print(f"Form data received: {request.form}")
     
     # Get user answers
     for i in range(len(quiz_data)):
@@ -225,11 +226,12 @@ def submit_quiz():
         print(f"Options: {quiz_data[i]['options']}")
         
         # Check if the selected option matches the correct answer
-        if answer and answer == quiz_data[i]['answer']:
+        if answer and answer.strip() == quiz_data[i]['answer'].strip():
             score += 1
             print("✓ Correct!")
         else:
             print("✗ Wrong!")
+            print(f"Answer comparison: '{answer}' == '{quiz_data[i]['answer']}'")
     
     print(f"\nFinal Score: {score}/{len(quiz_data)}")
     
