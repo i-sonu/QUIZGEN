@@ -40,8 +40,6 @@ def extract_text_from_pdf(pdf_path):
 
 class QuizGenerator:
     def __init__(self, groq_api_key):
-        # Set API key via environment variable
-        os.environ["GROQ_API_KEY"] = groq_api_key
         try:
             self.client = Groq(api_key=groq_api_key)
         except Exception as e:
@@ -56,7 +54,7 @@ class QuizGenerator:
             
         try:
             completion = self.client.chat.completions.create(
-                model="llama3-70b-8192",
+                model="mixtral-8x7b-32768",
                 messages=[
                     {"role": "system", "content": "You are a helpful assistant that returns only JSON data. Generate quiz questions based on the provided study material."},
                     {"role": "user", "content": prompt}
