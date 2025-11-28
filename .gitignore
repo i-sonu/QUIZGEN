@@ -1,5 +1,4 @@
 # Environment variables
-.env
 
 # Python
 __pycache__/
@@ -17,7 +16,8 @@ temp/
 tmp/
 
 # IDE specific files
-.vscode/
 .idea/
 *.swp
 *.swo 
+config.bat
+node_modules
